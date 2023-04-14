@@ -34,6 +34,21 @@ function register_database {
     DATABASE_BACKENDS+=" $1"
 }
 
+# Checking Databases are pre-installed in system
+
+#  for mysql-server
+
+if dpkg -l | grep -q "mysql-server"; then
+    sed -i 's/\(PRE_INSTALLED_MYSQL *= *\)\(false\)/\1true/' lib/databases/mysql
+fi
+
+
+#  for postgresql
+if command -v psql >/dev/null 2>&1; then
+    sed -i 's/\(PRE_INSTALLED_POSTGRESQL*=*\)\(false\)/\1true/' lib/databases/postgresql
+fi
+
+
 # Sourcing the database libs sets DATABASE_BACKENDS with the available list
 for f in $TOP_DIR/lib/databases/*; do
     source $f;
@@ -83,10 +98,10 @@ function initialize_database_backends {
         DATABASE_HOST=${DATABASE_HOST:-${MYSQL_HOST}}
     fi
 
-    DATABASE_USER=${DATABASE_USER:-${MYSQL_USER}}
+    export DATABASE_USER=${DATABASE_USER:-${MYSQL_USER}}
 
     if [ -n "$MYSQL_PASSWORD" ]; then
-        DATABASE_PASSWORD=$MYSQL_PASSWORD
+        export DATABASE_PASSWORD=$MYSQL_PASSWORD
     fi
 
     return 0

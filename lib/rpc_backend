@@ -19,6 +19,13 @@
 # should install all services through normal plugin methods, then
 # redefine ``iniset_rpc_backend`` in your code. That's the one portion
 # of this file which is a standard interface.
+PRE_INSTALLED_RABBIT=false
+
+if is_ubuntu; then
+    if dpkg -s rabbitmq-server >/dev/null 2>&1; then
+        PRE_INSTALLED_RABBIT=true
+    fi
+fi
 
 # Save trace setting
 _XTRACE_RPC_BACKEND=$(set +o | grep xtrace)
@@ -35,6 +42,9 @@ fi
 # clean up after rpc backend - eradicate all traces so changing backends
 # produces a clean switch
 function cleanup_rpc_backend {
+    if $PRE_INSTALLED_RABBIT; then
+        return
+    fi
     if is_service_enabled rabbit; then
         # Obliterate rabbitmq-server
         uninstall_package rabbitmq-server
@@ -49,6 +59,9 @@ function cleanup_rpc_backend {
 
 # install rpc backend
 function install_rpc_backend {
+    if $PRE_INSTALLED_RABBIT; then
+        return
+    fi
     if is_service_enabled rabbit; then
         # Install rabbitmq-server
         install_package rabbitmq-server

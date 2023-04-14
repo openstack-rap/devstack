@@ -13,6 +13,7 @@ set +o xtrace
 
 MYSQL_DRIVER=${MYSQL_DRIVER:-PyMySQL}
 INSTALL_DATABASE_SERVER_PACKAGES=$(trueorfalse True INSTALL_DATABASE_SERVER_PACKAGES)
+PRE_INSTALLED_MYSQL=false
 
 register_database mysql
 
@@ -44,6 +45,20 @@ function get_database_type_mysql {
 
 # Get rid of everything enough to cleanly change database backends
 function cleanup_database_mysql {
+    if $PRE_INSTALLED_MYSQL; then
+        DATABASE_USER=root
+        echo "user:"$DATABASE_USER 
+        echo "pwd:"$DATABASE_PASSWORD
+        sed -i '/[mysqld]/d' /etc/mysql/my.cnf
+        restart_service $MYSQL_SERVICE_NAME
+        DBS=("cinder" "glance" "keystone" "neutron" "nova_api" "nova_cell0" "nova_cell1" "placement" "stats")
+        echo "user:"$DATABASE_USER 
+        echo "pwd:"$DATABASE_PASSWORD
+        for db in ${DBS[*]}; do
+            sudo mysql -u$DATABASE_USER -p$DATABASE_PASSWORD -e "DROP DATABASE IF EXISTS $db;"
+        done
+        return
+    fi
     stop_service $MYSQL_SERVICE_NAME
     if is_ubuntu; then
         # Get ruthless with mysql
@@ -190,6 +205,9 @@ function configure_database_mysql {
 }
 
 function install_database_mysql {
+    if $PRE_INSTALLED_MYSQL; then
+        return
+    fi
     if is_ubuntu; then
         # Seed configuration with mysql password so that apt-get install doesn't
         # prompt us for a password upon install.

@@ -14,6 +14,7 @@ set +o xtrace
 
 MAX_DB_CONNECTIONS=${MAX_DB_CONNECTIONS:-200}
 INSTALL_DATABASE_SERVER_PACKAGES=$(trueorfalse True INSTALL_DATABASE_SERVER_PACKAGES)
+PRE_INSTALLED_POSTGRESQL=false
 
 register_database postgresql
 
@@ -26,7 +27,10 @@ function get_database_type_postgresql {
 }
 
 # Get rid of everything enough to cleanly change database backends
-function cleanup_database_postgresql {
+function cleanup_database_postgresql {i
+    if $PRE_INSTALLED_POSTGRESQL; then
+        return
+    fi
     stop_service postgresql
     if is_ubuntu; then
         # Get ruthless with mysql
@@ -94,6 +98,9 @@ function configure_database_postgresql {
 }
 
 function install_database_postgresql {
+    if $PRE_INSTALLED_POSTGRESQL; then
+        return
+    fi
     echo_summary "Installing postgresql"
     local pgpass=$HOME/.pgpass
     if [[ ! -e $pgpass ]]; then
