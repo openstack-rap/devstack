@@ -27,7 +27,7 @@ function get_database_type_postgresql {
 }
 
 # Get rid of everything enough to cleanly change database backends
-function cleanup_database_postgresql {i
+function cleanup_database_postgresql {
     if $PRE_INSTALLED_POSTGRESQL; then
         return
     fi
